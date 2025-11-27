@@ -97,3 +97,4 @@ if __name__ == "__main__":
     application.add_handler(conv_handler)
 
     application.run_polling()
+    # вроде сделал публичный
