@@ -19,6 +19,7 @@ from config.states import (
 )
 from handlers.jobs import send_job_message
 from datetime import timedelta
+from db.users_crud import create_user, get_user, update_user
 
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -34,11 +35,15 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         text="Привет, как ваше имя?",
         reply_markup=markup,
     )
+    if not await get_user(update.effective_user.id):
+        await create_user(update.effective_user.id)
+    
     return FIRST_NAME
 
 
 async def get_name(update: Update, context: ContextTypes.DEFAULT_TYPE):
     name = update.effective_message.text
+    await update_user(update.effective_user.id, name=name)
     keyboard = [[KeyboardButton("Отправить номер телефона", request_contact=True)]]
     markup = ReplyKeyboardMarkup(
         keyboard,
@@ -57,9 +62,10 @@ async def get_name(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 async def get_phone(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    phone_number = update.effective_message.contact.phone_number
-    context.user_data["phone_number"] = phone_number
-    if phone_number:
+    phone = update.effective_message.contact.phone_number
+    context.user_data["phone_number"] = phone
+    await update_user(update.effective_user.id, phone=phone)
+    if phone:
         await context.bot.send_message(
             chat_id=update.effective_chat.id,
             text="Спасибо! Напишите ваш email для регистрации.",
@@ -70,6 +76,7 @@ async def get_phone(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def get_email(update: Update, context: ContextTypes.DEFAULT_TYPE):
     email = update.effective_message.text
+    await update_user(update.effective_user.id, email=email)
     keyboard = [["Да", "Нет"], ["Я подумаю"]]
     markup = ReplyKeyboardMarkup(keyboard)
     context.user_data["email"] = email
@@ -84,14 +91,13 @@ async def get_email(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def get_answer(update: Update, context: ContextTypes.DEFAULT_TYPE):
     answer = update.effective_message.text.strip().lower()
-
+    await update_user(update.effective_user.id, agreement=1)
     if answer == "да":
         await context.bot.send_message(
             chat_id=update.effective_chat.id,
             text="Отлично! Спасибо что доверились нам.",
             reply_markup=ReplyKeyboardRemove(),
         )
-
         keyboard = [
             [
                 InlineKeyboardButton(
@@ -132,7 +138,7 @@ async def get_inline_button(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await query.answer()
     if query.data == "yes":
         await query.edit_message_text(text="Спасибо за ответ!")
-        return FIRST_NAME
+    return FIRST_NAME
 
 
 async def lead_magnit(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -160,5 +166,6 @@ async def lead_magnit(update: Update, context: ContextTypes.DEFAULT_TYPE):
             name="send_job_message",
             chat_id=update.effective_user.id,
         )
+        return ANSWER
 
     return ANSWER

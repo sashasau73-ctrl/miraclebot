@@ -44,9 +44,13 @@ from config.states import (
     LEAD_MAGNIT,
 )
 
+from db.database import create_tables
+import asyncio
 
 if __name__ == "__main__":
-    application = ApplicationBuilder().token(os.getenv("TOKEN")).build()
+    application = (
+        ApplicationBuilder().token(os.getenv("TOKEN")).post_init(create_tables).build()
+    )
 
     conv_handler = ConversationHandler(
         entry_points=[CommandHandler("start", start)],
