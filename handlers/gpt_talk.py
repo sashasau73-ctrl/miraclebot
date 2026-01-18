@@ -2,10 +2,11 @@ from telegram import Update
 from telegram.ext import ContextTypes
 from openai import OpenAI
 from config.states import LEAD_MAGNIT
+from config.config import OPENAI_API_KEY
 
 
 async def gpt_talk(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    client = OpenAI()
+    client = OpenAI(api_key=OPENAI_API_KEY)
     response = client.completions.create(
         model="gpt-5",
         reasoning={"effort": "low"},
