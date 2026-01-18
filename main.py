@@ -1,22 +1,12 @@
 import logging
-import os
-from dotenv import load_dotenv
-from telegram import (
-    Update,
-    ReplyKeyboardMarkup,
-    KeyboardButton,
-    InlineKeyboardMarkup,
-    InlineKeyboardButton,
-    ReplyKeyboardRemove,
-)
 from telegram.ext import (
     ApplicationBuilder,
-    ContextTypes,
     CommandHandler,
     ConversationHandler,
     MessageHandler,
     filters,
     CallbackQueryHandler,
+    PicklePersistence,
 )
 
 from handlers.progrev_handler import (
@@ -27,13 +17,8 @@ from handlers.progrev_handler import (
     get_answer,
     get_inline_button,
     lead_magnit,
+    gpt5_click,
 )
-
-load_dotenv()
-logging.basicConfig(
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO
-)
-
 
 from config.states import (
     FIRST_NAME,
@@ -42,14 +27,33 @@ from config.states import (
     ANSWER,
     INLINE_BUTTON,
     LEAD_MAGNIT,
+    GPT_TALK,
+    ADMIN_START,
 )
 
 from db.database import create_tables
-import asyncio
+from logs.logger import logger
+from handlers.gpt_talk import gpt_talk
+from config.config import TOKEN
+from handlers.admins_handler import (
+    hot_users_list,
+    send_message_all,
+    users_list,
+    user_list_csv,
+    normal_users_list,
+    cold_users_list,
+    bought_users_list,
+)
+
 
 if __name__ == "__main__":
+    persistence = PicklePersistence(filepath="MiracleBot")
     application = (
-        ApplicationBuilder().token(os.getenv("TOKEN")).post_init(create_tables).build()
+        ApplicationBuilder()
+        .token(TOKEN)
+        .persistence(persistence)
+        .post_init(create_tables)
+        .build()
     )
 
     conv_handler = ConversationHandler(
@@ -78,15 +82,41 @@ if __name__ == "__main__":
             ],
             INLINE_BUTTON: [
                 CallbackQueryHandler(callback=get_inline_button, pattern="yes"),
-                CallbackQueryHandler(callback=get_email, pattern="no"),
+                CallbackQueryHandler(callback=get_inline_button, pattern="no"),
             ],
             LEAD_MAGNIT: [
                 CallbackQueryHandler(callback=lead_magnit, pattern="more"),
+                CallbackQueryHandler(callback=gpt5_click, pattern="gpt5"),
+            ],
+            GPT_TALK: [
+                MessageHandler(
+                    filters=filters.TEXT & ~filters.COMMAND, callback=gpt_talk
+                )
+            ],
+            # Admin handlers
+            ADMIN_START: [
+                CallbackQueryHandler(callback=users_list, pattern="users_list"),
+                CallbackQueryHandler(callback=user_list_csv, pattern="user_list_csv"),
+                CallbackQueryHandler(
+                    callback=send_message_all, pattern="send_message_all"
+                ),
+                CallbackQueryHandler(callback=hot_users_list, pattern="hot_users_list"),
+                CallbackQueryHandler(
+                    callback=normal_users_list, pattern="normal_users_list"
+                ),
+                CallbackQueryHandler(
+                    callback=cold_users_list, pattern="cold_users_list"
+                ),
+                CallbackQueryHandler(
+                    callback=bought_users_list, pattern="bought_users_list"
+                ),
             ],
         },
         fallbacks=[CommandHandler("start", start)],
+        persistent=True,
+        name="my_conversation",
     )
 
     application.add_handler(conv_handler)
-
+    logger.info("Бот полетел!🤟")
     application.run_polling()

@@ -16,13 +16,20 @@ from config.states import (
     ANSWER,
     INLINE_BUTTON,
     LEAD_MAGNIT,
+    GPT_TALK,
 )
 from handlers.jobs import send_job_message
 from datetime import timedelta
 from db.users_crud import create_user, get_user, update_user
+from logs.logger import logger
+from config.config import ADMIN_ID
+from db.user_tags_crud import crate_user_tag
+from handlers.admins_handler import admins_start
 
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if update.effective_user.id == int(ADMIN_ID):
+        return await admins_start(update, context)
     keyboard = [[update.effective_user.first_name]]
     markup = ReplyKeyboardMarkup(
         keyboard,
@@ -37,7 +44,10 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     )
     if not await get_user(update.effective_user.id):
         await create_user(update.effective_user.id)
-    
+        logger.info(f"Создан новый пользователь: {update.effective_user.id}🚹")
+        await crate_user_tag(update.effective_user.id, "Обычный")
+        logger.info(f"Пользователю {update.effective_user.id} добавлен в таблицу user_tags")
+
     return FIRST_NAME
 
 
@@ -88,7 +98,6 @@ async def get_email(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
         return ANSWER
 
-
 async def get_answer(update: Update, context: ContextTypes.DEFAULT_TYPE):
     answer = update.effective_message.text.strip().lower()
     await update_user(update.effective_user.id, agreement=1)
@@ -112,9 +121,17 @@ async def get_answer(update: Update, context: ContextTypes.DEFAULT_TYPE):
             text="Вот ваш лид-магнит.",
             reply_markup=markup,
         )
+        context.job_queue.run_once(
+            send_job_message,
+            when=timedelta(hours=1),
+            data={"message": "Вы забыли забрать свой материал!"},
+            name=f"send_job_message_{update.effective_user.id}",
+            chat_id=update.effective_user.id,
+        )
+        context.user_data['job_name'] = f"send_job_message_{update.effective_user.id}"
 
         await context.bot.send_message(
-            chat_id=591650405,
+            chat_id=ADMIN_ID,
             text=f"Имя: {context.user_data['name']}\nТелефон: {context.user_data['phone_number']}\nEmail: {context.user_data['email']}\nUser ID: {update.effective_user.id}",
         )
         return LEAD_MAGNIT
@@ -134,6 +151,10 @@ async def get_answer(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 async def get_inline_button(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if 'job_name' in context.user_data:
+        for jobs in context.job_queue.get_jobs_by_name(context.user_data['job_name']):
+            jobs.schedule_removal()
+        
     query = update.callback_query
     await query.answer()
     if query.data == "yes":
@@ -149,7 +170,8 @@ async def lead_magnit(update: Update, context: ContextTypes.DEFAULT_TYPE):
             [
                 InlineKeyboardButton(
                     "Получить", url="https://rules-ring-okj.craft.me/JTs9GTTHqrznRk"
-                )
+                ),
+                InlineKeyboardButton("GPT-5 click", callback_data="gpt5"),
             ]
         ]
         markup = InlineKeyboardMarkup(keyboard)
@@ -159,13 +181,16 @@ async def lead_magnit(update: Update, context: ContextTypes.DEFAULT_TYPE):
             text="Вот второй лид-магнит с дополнительной информацией!",
             reply_markup=markup,
         )
-        context.job_queue.run_once(
-            send_job_message,
-            when=timedelta(hours=1),
-            data={"message": "Вы забыли забрать свой материал!"},
-            name="send_job_message",
-            chat_id=update.effective_user.id,
-        )
-        return ANSWER
-
+        await query.gpt_talk("Пользователь запросил GPT-5 click лид магнит.")
     return ANSWER
+
+
+async def gpt5_click(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    await query.answer()
+    await query.edit_message_text(
+        text="Отлично! Теперь напишите ваш вопрос для GPT-5:"
+    )
+    return GPT_TALK
+
+
