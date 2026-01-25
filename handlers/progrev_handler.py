@@ -174,8 +174,7 @@ async def lead_magnit(update: Update, context: ContextTypes.DEFAULT_TYPE):
     ]
     markup = InlineKeyboardMarkup(keyboard)
 
-    await context.bot.send_message(
-        chat_id=update.effective_chat.id,
+    await query.edit_message_text(
         text="Вот второй лид-магнит с дополнительной информацией!",
         reply_markup=markup,
     )
