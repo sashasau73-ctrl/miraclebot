@@ -12,7 +12,6 @@ import csv
 from config.states import ADMIN_START
 import asyncio
 
-from utils.escape_sym import escape_sym
 
 
 async def admins_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -65,7 +64,7 @@ async def users_list(update: Update, context: ContextTypes.DEFAULT_TYPE):
     text = "Список пользователей\:\n"
     text += "№. [Имя](tg://user?id=ID) - Телефон - Email\n"
     for n, user in enumerate(users, 1):
-        text += f'{n}. <a href="tg://user?id={user['id_tg']}">{user['name']}</a> - {user['phone']} - {user['email']}\n'
+        text += f"{n}. <a href=\"tg://user?id={user['id_tg']}\">{user['name']}</a> - {user['phone']} - {user['email']}\n"
     
     await context.bot.send_message(
         chat_id=update.effective_user.id,
