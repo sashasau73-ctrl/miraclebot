@@ -17,7 +17,7 @@ from handlers.progrev_handler import (
     get_answer,
     get_inline_button,
     lead_magnit,
-    gpt5_click,
+    
 )
 
 from config.states import (
@@ -33,7 +33,7 @@ from config.states import (
 
 from db.database import create_tables
 from logs.logger import logger
-from handlers.gpt_talk import gpt_talk
+from handlers.gpt_talk import gpt_talk, gpt5_click
 from config.config import TOKEN
 from handlers.admins_handler import (
     hot_users_list,

@@ -16,8 +16,11 @@ async def get_user(id_tg: int):
 
 async def get_users():
     async with aiosqlite.connect(DB_PATH) as conn:
+        conn.row_factory = aiosqlite.Row
         cursor = await conn.execute("SELECT * FROM users")
-        return await cursor.fetchall()
+        users = await cursor.fetchall()
+        return [dict(u) for u in users]
+        
 
 async def update_user(id_tg: int, **kwargs):
     async with aiosqlite.connect(DB_PATH) as conn:

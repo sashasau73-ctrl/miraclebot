@@ -16,7 +16,6 @@ from config.states import (
     ANSWER,
     INLINE_BUTTON,
     LEAD_MAGNIT,
-    GPT_TALK,
 )
 from handlers.jobs import send_job_message
 from datetime import timedelta
@@ -165,32 +164,23 @@ async def get_inline_button(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def lead_magnit(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
-    if query.data == "more":
-        keyboard = [
-            [
-                InlineKeyboardButton(
-                    "Получить", url="https://rules-ring-okj.craft.me/JTs9GTTHqrznRk"
-                ),
-                InlineKeyboardButton("GPT-5 click", callback_data="gpt5"),
-            ]
+    keyboard = [
+        [
+            InlineKeyboardButton(
+                "Получить", url="https://rules-ring-okj.craft.me/JTs9GTTHqrznRk"
+            ),
+            InlineKeyboardButton("GPT-5 click", callback_data="gpt5"),
         ]
-        markup = InlineKeyboardMarkup(keyboard)
+    ]
+    markup = InlineKeyboardMarkup(keyboard)
 
-        await context.bot.send_message(
-            chat_id=update.effective_chat.id,
-            text="Вот второй лид-магнит с дополнительной информацией!",
-            reply_markup=markup,
-        )
-        await query.gpt_talk("Пользователь запросил GPT-5 click лид магнит.")
-    return ANSWER
-
-
-async def gpt5_click(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    query = update.callback_query
-    await query.answer()
-    await query.edit_message_text(
-        text="Отлично! Теперь напишите ваш вопрос для GPT-5:"
+    await context.bot.send_message(
+        chat_id=update.effective_chat.id,
+        text="Вот второй лид-магнит с дополнительной информацией!",
+        reply_markup=markup,
     )
-    return GPT_TALK
+    return LEAD_MAGNIT
+
+
 
 

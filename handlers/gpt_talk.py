@@ -1,13 +1,22 @@
 from telegram import Update
 from telegram.ext import ContextTypes
 from openai import OpenAI
-from config.states import LEAD_MAGNIT
+from config.states import LEAD_MAGNIT, GPT_TALK
 from config.config import OPENAI_API_KEY
 
 
+
+async def gpt5_click(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    await query.answer()
+    await query.edit_message_text(
+        text="Отлично! Теперь напишите ваш вопрос для GPT-5:"
+    )
+    return GPT_TALK
+
 async def gpt_talk(update: Update, context: ContextTypes.DEFAULT_TYPE):
     client = OpenAI(api_key=OPENAI_API_KEY)
-    response = client.completions.create(
+    response = client.responses.create(
         model="gpt-5",
         reasoning={"effort": "low"},
         input=[
