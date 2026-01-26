@@ -17,7 +17,6 @@ from handlers.progrev_handler import (
     get_answer,
     get_inline_button,
     lead_magnit,
-    
 )
 
 from config.states import (

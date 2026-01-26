@@ -120,14 +120,15 @@ async def get_answer(update: Update, context: ContextTypes.DEFAULT_TYPE):
             text="Вот ваш лид-магнит.",
             reply_markup=markup,
         )
-        context.job_queue.run_once(
-            send_job_message,
-            when=timedelta(hours=1),
-            data={"message": "Вы забыли забрать свой материал!"},
-            name=f"send_job_message_{update.effective_user.id}",
-            chat_id=update.effective_user.id,
-        )
-        context.user_data['job_name'] = f"send_job_message_{update.effective_user.id}"
+        if context.job_queue:
+            job = context.job_queue.run_once(
+                send_job_message,
+                when=timedelta(hours=1),
+                data={"message": "Вы забыли забрать свой материал!"},
+                name=f"send_job_message_{update.effective_user.id}",
+                chat_id=update.effective_user.id,
+            )
+            context.user_data['job_name'] = job.name
 
         await context.bot.send_message(
             chat_id=ADMIN_ID,
@@ -150,7 +151,7 @@ async def get_answer(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 async def get_inline_button(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if 'job_name' in context.user_data:
+    if 'job_name' in context.user_data and context.job_queue:
         for jobs in context.job_queue.get_jobs_by_name(context.user_data['job_name']):
             jobs.schedule_removal()
         
