@@ -1,14 +1,4 @@
 import logging
-
-from telegram import (
-    Update,
-    ReplyKeyboardMarkup,
-    KeyboardButton,
-    InlineKeyboardMarkup,
-    InlineKeyboardButton,
-    ReplyKeyboardRemove,
-)
-
 from telegram.ext import (
     ApplicationBuilder,
     CommandHandler,
