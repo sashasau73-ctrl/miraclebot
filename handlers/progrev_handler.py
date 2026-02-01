@@ -22,7 +22,7 @@ from datetime import timedelta
 from db.users_crud import create_user, get_user, update_user
 from logs.logger import logger
 from config.config import ADMIN_ID
-from db.user_tags_crud import crate_user_tag
+from db.user_tags_crud import create_user_tag
 from handlers.admins_handler import admins_start
 
 
@@ -44,7 +44,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not await get_user(update.effective_user.id):
         await create_user(update.effective_user.id)
         logger.info(f"Создан новый пользователь: {update.effective_user.id}🚹")
-        await crate_user_tag(update.effective_user.id, "Обычный")
+        await create_user_tag(update.effective_user.id, "Обычный")
         logger.info(f"Пользователю {update.effective_user.id} добавлен в таблицу user_tags")
 
     return FIRST_NAME
